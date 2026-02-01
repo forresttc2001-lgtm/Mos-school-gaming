@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M os Gaming | Low Latency Cloud</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00ff88;
+            --accent: #7000ff;
+            --bg: #050505;
+            --card-bg: #111;
+            --text: #e0e0e0;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Roboto Mono', monospace;
+            overflow: hidden;
+        }
+
+        .hidden { display: none !important; }
+
+        /* --- NAVIGATION --- */
+        nav {
+            padding: 15px 40px;
+            background: rgba(0,0,0,0.8);
+            border-bottom: 1px solid #222;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo { font-family: 'Orbitron'; color: var(--primary); font-size: 1.2rem; }
+
+        /* --- DASHBOARD --- */
+        .container {
+            padding: 40px;
+            height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .game-card {
+            background: var(--card-bg);
+            border: 1px solid #222;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+        }
+
+        .game-card:hover {
+            border-color: var(--primary);
+            background: #181818;
+            transform: translateY(-5px);
+        }
+
+        .game-thumb {
+            height: 120px;
+            background: #222;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: #444;
+        }
+
+        /* --- STREAM INTERFACE --- */
+        #stream-ui {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000;
+            z-index: 9999;
+        }
+
+        #game-canvas {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle, #111 0%, #000 100%);
+        }
+
+        /* HUD Overlay */
+        .hud {
+            position: absolute;
+            top: 20px; left: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-left: 3px solid var(--primary);
+            font-size: 0.7rem;
+            pointer-events: none;
+        }
+
+        .input-status {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            opacity: 0.8;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse { 50% { opacity: 0.4; } }
+
+        .exit-hint {
+            position: absolute;
+            top: 20px; right: 20px;
+            color: #555;
+            font-size: 0.7rem;
+        }
+
+        /* --- LOADER --- */
+        #loader {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .bar { width: 200px; height: 2px; background: #222; position: relative; }
+        .progress { position: absolute; height: 100%; background: var(--primary); width: 0%; transition: 0.2s; }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">M OS // CLOUD</div>
+        <div style="font-size: 0.7rem; color: var(--primary);">INPUT: KBM ENABLED</div>
+    </nav>
+
+    <div class="container">
+        <h2 style="font-family: 'Orbitron'; font-size: 1rem; margin-bottom: 25px;">LIBRARY</h2>
+        <div class="game-grid">
+            <div class="game-card" onclick="launchGame('ROBLOX')">
+                <div class="game-thumb">RBX_ENGINE</div>
+                <div>ROBLOX</div>
+            </div>
+            <div class="game-card" onclick="launchGame('FORTNITE')">
+                <div class="game-thumb" style="color: #4da6ff;">UE5_STREAM</div>
+                <div>FORTNITE</div>
+            </div>
+            <div class="game-card" onclick="launchGame('AMONG US')">
+                <div class="game-thumb" style="color: #ff4d4d;">2D_NODE</div>
+                <div>AMONG US</div>
+            </div>
+            <div class="game-card" onclick="launchGame('CALL OF DUTY')">
+                <div class="game-thumb" style="color: #a6a6a6;">MW_CORE</div>
+                <div>CALL OF DUTY</div>
+            </div>
+            <div class="game-card" onclick="launchGame('FALL GUYS')">
+                <div class="game-thumb" style="color: #ffb3ff;">UNITY_3D</div>
+                <div>FALL GUYS</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loader" class="hidden">
+        <h3 id="load-label" style="font-size: 0.8rem;">RESERVING GPU...</h3>
+        <div class="bar"><div id="progress" class="progress"></div></div>
+    </div>
+
+    <div id="stream-ui" class="hidden">
+        <div id="game-canvas">
+            <div class="hud">
+                <div>STREAM: 1080p60</div>
+                <div id="latency">PING: 12ms</div>
+                <div id="kb-log">LAST KEY: NONE</div>
+            </div>
+            
+            <div class="exit-hint">PRESS [ESC] TO DISCONNECT</div>
+            
+            <h2 id="stream-title" style="font-family: 'Orbitron'; color: #222;">WAITING FOR INPUT...</h2>
+            <p id="lock-notice" style="color: var(--primary); font-size: 0.8rem;">CLICK TO CAPTURE MOUSE & KEYBOARD</p>
+            
+            <div class="input-status" id="input-banner">VIRTUAL INPUTS ACTIVE</div>
+        </div>
+    </div>
+
+    <script>
+        const loader = document.getElementById('loader');
+        const streamUI = document.getElementById('stream-ui');
+        const gameCanvas = document.getElementById('game-canvas');
+        const progress = document.getElementById('progress');
+        const loadLabel = document.getElementById('load-label');
+        const kbLog = document.getElementById('kb-log');
+
+        function launchGame(name) {
+            loader.classList.remove('hidden');
+            let p = 0;
+            const interval = setInterval(() => {
+                p += Math.random() * 20;
+                progress.style.width = p + '%';
+                if (p >= 100) {
+                    clearInterval(interval);
+                    document.getElementById('stream-title').innerText = name;
+                    loader.classList.add('hidden');
+                    streamUI.classList.remove('hidden');
+                    p = 0; progress.style.width = '0%';
+                }
+            }, 150);
+        }
+
+        // --- THE MOUSE & KEYBOARD MAGIC ---
+
+        // 1. Capture Mouse (Pointer Lock)
+        gameCanvas.addEventListener('click', () => {
+            gameCanvas.requestPointerLock();
+        });
+
+        document.addEventListener('pointerlockchange', () => {
+            if (document.pointerLockElement === gameCanvas) {
+                document.getElementById('lock-notice').innerText = "MOUSE LOCKED - INPUTS CAPTURED";
+                document.getElementById('input-banner').style.background = "#00ff88";
+                document.getElementById('input-banner').style.color = "#000";
+            } else {
+                document.getElementById('lock-notice').innerText = "CLICK TO RE-CAPTURE INPUTS";
+                document.getElementById('input-banner').style.background = "#7000ff";
+                document.getElementById('input-banner').style.color = "#fff";
+                // Optionally hide the stream when they escape
+                // streamUI.classList.add('hidden');
+            }
+        });
+
+        // 2. Capture Keyboard
+        document.addEventListener('keydown', (e) => {
+            if (!streamUI.classList.contains('hidden')) {
+                kbLog.innerText = `LAST KEY: ${e.code}`;
+                
+                // Logic to stop keys from scrolling the page
+                if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+                    e.preventDefault();
+                }
+
+                // Emulate "sending" to server
+                console.log(`Sending ${e.code} to Cloud Server...`);
+            }
+        });
+
+        // Simulating Latency Jitter
+        setInterval(() => {
+            if (!streamUI.classList.contains('hidden')) {
+                const ms = Math.floor(Math.random() * 5) + 10;
+                document.getElementById('latency').innerText = `PING: ${ms}ms`;
+            }
+        }, 2000);
+
+    </script>
+</body>
+</html>
